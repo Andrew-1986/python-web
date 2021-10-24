@@ -13,26 +13,19 @@ def factorize (*number):
 
 
 if __name__ == "__main__":
+   '''sync factorize'''
+    print("Start sync factorize")
     time_start = time()
     factorize(128, 255, 99999, 10651060)
     time_end = time()
     print(time_end - time_start)
 
+    '''multiprocessing factorize'''
+    print("Start multiprocessing factorize")
     time_start_process = time()
-    process_1 = Process(target=factorize, args=(128, ))
-    process_2 = Process(target=factorize, args=(255, ))
-    process_3 = Process(target=factorize, args=(99999, ))
-    process_4 = Process(target=factorize, args=(10651060, ))
 
-    process_1.start()
-    process_2.start()
-    process_3.start()
-    process_4.start()
-
-    process_1.join()
-    process_2.join()
-    process_3.join()
-    process_4.join()
+    with multiprocessing.Pool() as Pool:
+        result = Pool.map(factorize, (128, 255, 99999, 10651060))
 
     time_end_process = time()
     print(time_end_process - time_start_process)
