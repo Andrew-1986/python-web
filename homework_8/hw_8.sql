@@ -1,43 +1,43 @@
 -- students table
 CREATE TABLE IF NOT EXISTS students(
-	id INT PRIMARY KEY NOT NULL,
+    id INT PRIMARY KEY NOT NULL,
     student_name VARCHAR(50),
     group_id INT NOT NULL,
     FOREIGN KEY (group_id) REFERENCES groups (id)
-	ON UPDATE CASCADE
+    ON UPDATE CASCADE
 );
 
 INSERT INTO students ('id', 'student_name', 'group_id')
 VALUES (1, 'Austin', 1),
-	   (2, 'Thomas', 2),
+       (2, 'Thomas', 2),
        (3, 'Carey', 3),
-	   (4, 'Taylor', 1),
+       (4, 'Taylor', 1),
        (5, 'Mejia', 2),
-	   (6, 'Stevenson', 3),
+       (6, 'Stevenson', 3),
        (7, 'Palmer', 1),
-	   (8, 'Alexander', 2),
+       (8, 'Alexander', 2),
        (9, 'Jimenez', 3),
-	   (10, 'Mann', 1),
+       (10, 'Mann', 1),
        (11, 'Wise', 2),
-	   (12, 'Garrett', 3),
+       (12, 'Garrett', 3),
        (13, 'Waters', 1),
-	   (14, 'Parsons', 2),
+       (14, 'Parsons', 2),
        (15, 'Watson', 3),
-	   (16, 'Osborne', 1),
+       (16, 'Osborne', 1),
        (17, 'Thornton', 2),
-	   (18, 'Harmon', 3),
+       (18, 'Harmon', 3),
        (19, 'Gardner', 1),
-	   (20, 'Field', 2),
+       (20, 'Field', 2),
        (21, 'Abbott', 3),
-	   (22, 'Khan', 1),
+       (22, 'Khan', 1),
        (23, 'Allen', 2),
-	   (24, 'Joyce', 3),
+       (24, 'Joyce', 3),
        (25, 'Figueroa', 1),
-	   (26, 'Fuller', 2),
+       (26, 'Fuller', 2),
        (27, 'Reed', 3),
-	   (28, 'Kaye', 1),
+       (28, 'Kaye', 1),
        (29, 'Reynolds', 2),
-	   (30, 'Kruger', 3);
+       (30, 'Kruger', 3);
 
 -- groups table
 CREATE TABLE IF NOT EXISTS groups (
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS groups (
 
 INSERT INTO groups ('id', 'group_name')
 VALUES (1, 'Group-1'),
-	   (2, 'Group-2'),
-	   (3, 'Group-3');
+       (2, 'Group-2'),
+       (3, 'Group-3');
 
 -- classes table
 CREATE TABLE IF NOT EXISTS classes (
@@ -64,20 +64,20 @@ CREATE TABLE IF NOT EXISTS classes (
 
 INSERT INTO classes ('id', 'lecture_id', 'class_name', 'group_id')
 VALUES (1, 1, 'Mathematic', 1),
-	   (2, 3, 'Genetic', 1),
-	   (3, 2, 'French', 1),
-	   (4, 2, 'English', 1),
-	   (5, 1, 'Physic', 1),
+       (2, 3, 'Genetic', 1),
+       (3, 2, 'French', 1),
+       (4, 2, 'English', 1),
+       (5, 1, 'Physic', 1),
        (6, 1, 'Mathematic', 2),
-	   (7, 3, 'Genetic', 2),
-	   (8, 2, 'French', 2),
-	   (9, 2, 'English', 2),
-	   (10, 1, 'Physic', 2),
+       (7, 3, 'Genetic', 2),
+       (8, 2, 'French', 2),
+       (9, 2, 'English', 2),
+       (10, 1, 'Physic', 2),
        (11, 1, 'Mathematic', 3),
-	   (12, 3, 'Genetic', 3),
-	   (13, 2, 'French', 3),
-	   (14, 2, 'English', 3),
-	   (15, 1, 'Physic', 3);
+       (12, 3, 'Genetic', 3),
+       (13, 2, 'French', 3),
+       (14, 2, 'English', 3),
+       (15, 1, 'Physic', 3);
 
 --grades table
 CREATE TABLE IF NOT EXISTS grades (
@@ -3106,11 +3106,10 @@ CREATE TABLE IF NOT EXISTS lecturers(
 
 INSERT INTO lecturers ('id', 'lecturer_name')
 VALUES (1, 'Jack Black'),
-	   (2, 'Ivan Danko'),
-	   (3, 'Joe Romero');
+       (2, 'Ivan Danko'),
+       (3, 'Joe Romero');
 
 -- samples
-
 -- average mark 5 students
 SELECT student_name, subject_name, group_name, MAX(avg_grade)
 FROM
