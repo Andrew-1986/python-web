@@ -1,9 +1,10 @@
-import asyncio
-from aiopath import AsyncPath
-from asyncio import run, gather
-import os
+import sys
+from pathlib import Path
 import shutil
 import re
+import asyncio
+import aiopath
+import time
 
 
 def normalize(text):
@@ -18,142 +19,128 @@ def normalize(text):
     return translated
 
 
-async def file_handler(path, param):
-    imgs_extension = ['jpeg', 'png', 'jpg', 'psd']
-    imgs_list = []
-    docs_extension = ['doc', 'docx', 'txt', 'pdf', 'xlsx', 'xls', 'pptx']
-    docs_list = []
-    video_extension = ['avi', 'mp4', 'mov']
-    video_list = []
-    music_extension = ['mp3', 'ogg', 'wav', 'amr']
-    music_list = []
-    archive_extension = ['zip', 'gz', 'tar']
-    archive_list = []
-    folders = []
-    files = os.listdir(path)
-    
-    if files:
-        for file in files:
-            new_element = file.split('.')
-            
-            if new_element[-1] in imgs_extension:
-                imgs_list.append(file)
-            elif new_element[-1] in docs_extension:
-                docs_list.append(file)
-            elif new_element[-1] in video_extension:
-                video_list.append(file)
-            elif new_element[-1] in music_extension:
-                music_list.append(file)
-            elif new_element[-1] in archive_extension:
-                archive_list.append(file)
-            elif os.path.isdir(path + f'\{file}') and len(os.listdir(path + f'\{file}')) != 0:
-                folders.append(file)
-            elif os.path.isdir(path + f'\{file}') and len(os.listdir(path + f'\{file}')) == 0:
-                os.removedirs(path + f'\{file}')
-                
-        if param == "imgs":
-            return imgs_list
-        elif param == "docs":
-            return docs_list
-        elif param == "video":
-            return video_list
-        elif param == "music":
-            return music_list
-        elif param == "archive":
-            return archive_list
-        elif param == "folders":
-            return folders
+JPEG_IMAGES = []
+JPG_IMAGES = []
+PNG_IMAGES = []
+SVG_IMAGES = []
+AVI_VIDEOS = []
+MP4_VIDEOS = []
+MOV_VIDEOS = []
+MKV_VIDEOS = []
+DOC_DOCUMENTS = []
+DOCX_DOCUMENTS = []
+TXT_DOCUMENTS = []
+PDF_DOCUMENTS = []
+XLSX_DOCUMENTS = []
+PPTX_DOCUMENTS = []
+MP3_MUSICS = []
+OGG_MUSICS = []
+WAV_MUSICS = []
+AMR_MUSICS = []
+OTHER = []
+ARCH = []
+FOLDERS = []
+UNKNOWN = set()
+EXTENSION = set()
+
+REGISTERED_EXTENSIONS = {
+    "JPEG": JPEG_IMAGES,
+    "JPG": JPG_IMAGES,
+    "PNG": PNG_IMAGES,
+    "SVG": SVG_IMAGES,
+    "ZIP": ARCH,
+    'AVI': AVI_VIDEOS,
+    'MP4': MP4_VIDEOS,
+    'MOV': MOV_VIDEOS,
+    'MKV': MKV_VIDEOS,
+    'DOC': DOC_DOCUMENTS,
+    'DOCX': DOCX_DOCUMENTS,
+    'TXT': TXT_DOCUMENTS,
+    'PDF': PDF_DOCUMENTS,
+    'XLSX': XLSX_DOCUMENTS,
+    'PPTX': PPTX_DOCUMENTS,
+    'MP3': MP3_MUSICS,
+    'OGG': OGG_MUSICS,
+    'WAV': WAV_MUSICS,
+    'AMR': AMR_MUSICS
+}
+
+
+def get_extension(file_name) -> str:
+    return Path(file_name).suffix[1:].upper()
+
+
+async def scan(folder: Path):
+    folder = aiopath.AsyncPath(folder)
+    async for item in folder.iterdir():
+        is_folder = await item.is_dir()
+        if is_folder:
+            if item.name not in REGISTERED_EXTENSIONS.keys():
+                FOLDERS.append(item)
+                await scan(item)
+            continue
+
+        extension = get_extension(item.name)
+        new_name = folder / item.name
+        if not extension:
+            OTHER.append(new_name)
         else:
-            return None
+            try:
+                current_container = REGISTERED_EXTENSIONS[extension]
+                EXTENSION.add(extension)
+                current_container.append(new_name)
+
+            except KeyError:
+                    UNKNOWN.add(extension)
+                    OTHER.append(new_name)
+                    
+
+async def handle_file(file: Path, root_folder: Path, dist):
+    target_folder = root_folder / dist
+    target_folder.mkdir(exist_ok=True)
+    ext = Path(file).suffix
+    if dist == "ARCH":
+        folder_for_arch = normalize(file.name.replace(ext, ""))
+        archive_folder = target_folder / folder_for_arch
+        archive_folder.mkdir(exist_ok=True)  # create folder ARCH/name_archives
+        try:
+            shutil.unpack_archive(file, archive_folder)
+        except shutil.ReadError:
+            archive_folder.rmdir()
+            return
+        file.unlink()
     else:
-        os.removedirs(path)
+        new_name = normalize(file.name.replace(ext, "")) + ext
+        await file.replace(target_folder / new_name)
 
 
-async def imgs_handle(path):
-    files_list = await file_handler(path, 'imgs')
-    folders = await file_handler(path, 'folders')
-    os.makedirs(f'{path}\images')
-    
-    for file in files_list:
-        if os.path.isfile(f'{path}\{file}'):
-            shutil.copyfile(f'{path}\{file}', f'{path}\images\{normalize(file)}')
-            
-    await asyncio.sleep(2)
-    
-    for folder in folders:
-        if folder not in ['images', 'documents', 'music', 'video', 'archives']:
-            await picture_handle(f'{path}\{folder}')
-    
-
-async def docs_handle(path):
-    files_list = await file_handler(path, 'docs')
-    folders = await file_handler(path, 'folders')  
-    os.makedirs(f'{path}\documents')
-    
-    for file in files_list:
-        if os.path.isfile(f'{path}\{file}'):
-            shutil.copyfile(f'{path}\{file}', f'{path}\documents\{normalize(file)}')
-            
-    await asyncio.sleep(2)
-    
-    for folder in folders:
-        if folder not in ['images', 'documents', 'music', 'video', 'archives']:
-            await document_handle(f'{path}\{folder}')
-            
-
-async def video_handle(path):
-    files_list = await file_handler(path, 'video')
-    folders = await file_handler(path, 'folders')   
-    os.makedirs(f'{path}\video')
-    
-    for file in files_list:
-        if os.path.isfile(f'{path}\{file}'):
-            shutil.copyfile(f'{path}\{file}', f'{path}\video\{normalize(file)}')
-            
-    await asyncio.sleep(2)
-    
-    for folder in folders:
-        if folder not in ['images', 'documents', 'music', 'video', 'archives']:
-            await video_handle(f'{path}\{folder}')
+async def handle_folder(folder: Path):
+    try:
+        await folder.rmdir()
+    except OSError:
+        print(f"Folder {folder} is not delete!")
 
 
-async def music_handle(path):
-    files_list = await file_handler(path, 'music')
-    folders = await file_handler(path, 'folders')   
-    os.makedirs(f'{path}\music')
-    
-    for file in files_list:
-        if os.path.isfile(f'{path}\{file}'):
-            shutil.copyfile(f'{path}\{file}', f'{path}\music\{normalize(file)}')
-            
-    await asyncio.sleep(2)
-    
-    for folder in folders:
-        if folder not in ['images', 'documents', 'music', 'video', 'archives']:
-            await music_handle(f'{path}\{folder}')
-            
+async def main(folder):
+    await scan(folder)
 
-async def archive_handle(path):
-    files_list = await file_handler(path, 'archive')
-    folders = await file_handler(path, 'folders')
-    os.makedirs(f'{path}\archives')
-    
-    for file in files_list:
-        if os.path.isfile(f'{path}\{file}'):
-            shutil.unpack_archive(f'{path}\{file}', f'{path}\archives\{normalize(file)}')
-            
-    await asyncio.sleep(2)
-    
-    for folder in folders:
-        if folder not in ['images', 'documents', 'music', 'video', 'archives']:
-            await archive_handle(f'{path}\{folder}')
+    for file in ARCH:
+        await handle_file(file, folder, "ARCH")
 
+    for file in OTHER:
+        await handle_file(file, folder, "OTHER")
 
-async def main():
-    path = input("Choose directory: ")
-    tasks = [imgs_handle(path), docs_handle(path), music_handle(path), video_handle(path), archive_handle(path)]
-    await gather(*tasks)
+    for items in REGISTERED_EXTENSIONS.values():
+        for file in items:
+            folder_new = list(REGISTERED_EXTENSIONS.keys())[list(REGISTERED_EXTENSIONS.values()).index(items)]
+            await handle_file(file, folder, folder_new)
+
+    for f in FOLDERS:
+        await handle_folder(f)
 
 
 if __name__ == "__main__":
-    run(main())
+    scan_path = sys.argv[1]
+    print(f"Start in folder {scan_path}")
+    sort_folder = Path(scan_path)
+    asyncio.run(main(sort_folder.resolve()))
